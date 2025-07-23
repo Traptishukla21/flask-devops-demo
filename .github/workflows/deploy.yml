@@ -1,0 +1,30 @@
+name: Deploy to AWS EC2 via SSH
+
+on:
+  push:
+    branches: [ main ]  # jab main branch par push ho, tab run ho
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: SSH into EC2 and Deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          echo "🟢 Connected to EC2"
+          sudo docker stop flask-app || true
+          sudo docker rm flask-app || true
+          sudo docker rmi flask-app || true
+          cd ~/app || mkdir ~/app && cd ~/app
+          rm -rf *
+          git clone https://github.com/Traptishukla21/flask-decops-demo.git .
+          sudo docker build -t flask-app .
+          sudo docker run -d -p 5000:5000 --name flask-app flask-app
